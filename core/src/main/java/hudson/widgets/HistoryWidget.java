@@ -35,8 +35,11 @@ import org.kohsuke.stapler.StaplerResponse;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 
@@ -132,8 +135,39 @@ public class HistoryWidget<O extends ModelObject,T> extends Widget {
                 trimmed = itr.hasNext(); // if we don't have enough items in the base list, setting this to false will optimize the next getRenderList() invocation.
                 return updateFirstTransientBuildKey(lst);
             }
-        } else
-            return updateFirstTransientBuildKey(baseList);
+        } else {
+            return updateFirstTransientBuildKey(new MyIterable<T>(baseList));
+        }
+    }
+
+    private static class MyIterable<ABC> implements Iterable<ABC> {
+
+        final Iterable<ABC> finalBaseList;
+        public MyIterable(Iterable<ABC> baseList) {
+            this.finalBaseList = baseList;
+        }
+        public Iterator<ABC> iterator() {
+            final Iterator<ABC> iter = finalBaseList.iterator();
+            Iterator<ABC> cleanIter = new Iterator<ABC>() {
+
+                private int count;
+                public boolean hasNext() {
+                    boolean hasNext = iter.hasNext();
+                    return hasNext;
+                }
+
+                public ABC next() {
+                    ABC next = iter.next();
+                    return next;
+                }
+
+                public void remove() {
+                    iter.remove();
+                }
+            };
+
+            return cleanIter;
+        }
     }
 
     public boolean isTrimmed() {
