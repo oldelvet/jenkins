@@ -270,6 +270,17 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      */
     private @CheckForNull ArtifactManager artifactManager;
 
+    private static final SimpleDateFormat CANONICAL_ID_FORMATTER = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+    public static final ThreadLocal<SimpleDateFormat> ID_FORMATTER = new IDFormatterProvider();
+    private static final class IDFormatterProvider extends ThreadLocal<SimpleDateFormat> {
+        @Override
+        protected SimpleDateFormat initialValue() {
+            synchronized (CANONICAL_ID_FORMATTER) {
+                return (SimpleDateFormat) CANONICAL_ID_FORMATTER.clone();
+            }
+        }
+    };
+
     /**
      * Creates a new {@link Run}.
      * @param job Owner job
@@ -2233,7 +2244,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     public @Nonnull final EnvVars getCharacteristicEnvVars() {
         EnvVars env = getParent().getCharacteristicEnvVars();
         env.put("BUILD_NUMBER",String.valueOf(number));
-        env.put("BUILD_ID",getId());
+        env.put("BUILD_ID",ID_FORMATTER.get().format(new Date(timestamp)));
         env.put("BUILD_TAG","jenkins-"+getParent().getFullName().replace('/', '-')+"-"+number);
         return env;
     }
